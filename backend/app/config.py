@@ -19,6 +19,23 @@ class Settings(BaseSettings):
         default="http://localhost:5173,http://localhost:3000,http://frontend:5173",
         description="Comma-separated allowed browser origins (CORS_ORIGINS)",
     )
+    rate_limit_enabled: bool = Field(default=True, description="Enable API rate limiting (RATE_LIMIT_ENABLED)")
+    rate_limit_default: str = Field(
+        default="120/minute",
+        description="Default per-IP limit for API routes (RATE_LIMIT_DEFAULT)",
+    )
+    rate_limit_auth: str = Field(
+        default="10/minute",
+        description="Per-IP limit for login and register (RATE_LIMIT_AUTH)",
+    )
+    rate_limit_schedule: str = Field(
+        default="90/minute",
+        description="Per-IP limit for schedule lookups (RATE_LIMIT_SCHEDULE)",
+    )
+    trust_proxy_headers: bool = Field(
+        default=True,
+        description="Use X-Forwarded-For / X-Real-IP for rate-limit keys (TRUST_PROXY_HEADERS)",
+    )
 
     @field_validator("environment")
     @classmethod

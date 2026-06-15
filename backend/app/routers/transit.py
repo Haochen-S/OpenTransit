@@ -1,7 +1,9 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
+from app.rate_limit import limiter
 from app.schemas.trip import ScheduleResponse, Station
 from app.services import schedule_cache_service
 from app.services.station_service import StationService
@@ -10,7 +12,7 @@ router = APIRouter(prefix="/transit", tags=["transit"])
 
 
 @router.get("/stations/all", response_model=list[Station])
-def list_all_stations(db: Session = Depends(get_db)):
+def list_all_stations(request: Request, db: Session = Depends(get_db)):
     stations = StationService(db).list_all()
     if not stations:
         raise HTTPException(status_code=503, detail="Station list not loaded yet")
@@ -18,7 +20,9 @@ def list_all_stations(db: Session = Depends(get_db)):
 
 
 @router.get("/schedule", response_model=ScheduleResponse)
+@limiter.limit(settings.rate_limit_schedule)
 async def get_schedule(
+    request: Request,
     background_tasks: BackgroundTasks,
     origin_id: str = Query(min_length=1),
     origin_name: str = Query(min_length=1),

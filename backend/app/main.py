@@ -1,10 +1,14 @@
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.config import settings
 from app.database import engine
+from app.rate_limit import limiter
 from app.routers import auth, trips, transit
 from app.scheduler import ensure_stations_loaded, shutdown_scheduler, start_scheduler
 
@@ -20,6 +24,10 @@ app = FastAPI(
     redoc_url=None if is_production else "/redoc",
     openapi_url=None if is_production else "/openapi.json",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,7 +45,11 @@ app.include_router(trips.router, prefix="/api")
 @app.on_event("startup")
 async def on_startup():
     settings.validate_production()
-    logger.info("Starting API (environment=%s)", settings.environment)
+    logger.info(
+        "Starting API (environment=%s, rate_limit=%s)",
+        settings.environment,
+        settings.rate_limit_enabled,
+    )
     await ensure_stations_loaded()
     start_scheduler()
 
@@ -49,5 +61,6 @@ async def on_shutdown():
 
 
 @app.get("/api/health")
-def health():
+@limiter.exempt
+def health(request: Request):
     return {"status": "ok"}
