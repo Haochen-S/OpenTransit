@@ -11,7 +11,7 @@ type Step = "origin" | "destination";
 export function NewTripPage() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const invalidateTrips = useInvalidateTrips(isLoggedIn);
+  const invalidateTrips = useInvalidateTrips();
   const [step, setStep] = useState<Step>("origin");
   const [origin, setOrigin] = useState<Station | null>(null);
 

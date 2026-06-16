@@ -7,10 +7,12 @@ export function tripsQueryKey(isLoggedIn: boolean) {
   return ["trips", isLoggedIn] as const;
 }
 
-export function useTrips(isLoggedIn: boolean) {
+export function useTrips(isLoggedIn: boolean, enabled = true) {
   return useQuery({
     queryKey: tripsQueryKey(isLoggedIn),
     queryFn: () => tripStore.list(isLoggedIn),
+    enabled,
+    staleTime: 0,
   });
 }
 
@@ -30,7 +32,7 @@ export function useRemoveTrip(isLoggedIn: boolean) {
   });
 }
 
-export function useInvalidateTrips(isLoggedIn: boolean) {
+export function useInvalidateTrips() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: tripsQueryKey(isLoggedIn) });
+  return () => queryClient.invalidateQueries({ queryKey: ["trips"] });
 }

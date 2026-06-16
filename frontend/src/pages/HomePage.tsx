@@ -7,8 +7,8 @@ import type { TripRoute } from "../types";
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
-  const { data: trips = [], isLoading } = useTrips(isLoggedIn);
+  const { isLoggedIn, loading: authLoading } = useAuth();
+  const { data: trips = [], isLoading } = useTrips(isLoggedIn, !authLoading);
   const { summaries, loadingKeys } = useTripSummariesFromQueries(trips, !isLoading);
   const removeTripMutation = useRemoveTrip(isLoggedIn);
 

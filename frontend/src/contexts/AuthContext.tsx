@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/ApiClient";
 import { TOKEN_KEY } from "../constants";
 import type { User } from "../types";
@@ -24,6 +25,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const refreshAppData = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["trips"] });
+    await queryClient.invalidateQueries({ queryKey: ["schedule"] });
+  }, [queryClient]);
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -37,16 +44,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const verifyOtp = useCallback(async (email: string, otp: string) => {
-    const { access_token } = await api.verifyOtp(email, otp);
-    localStorage.setItem(TOKEN_KEY, access_token);
-    setUser(await api.me());
-  }, []);
+  const verifyOtp = useCallback(
+    async (email: string, otp: string) => {
+      const { access_token } = await api.verifyOtp(email, otp);
+      localStorage.setItem(TOKEN_KEY, access_token);
+      setUser(await api.me());
+      await refreshAppData();
+    },
+    [refreshAppData],
+  );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
-  }, []);
+    await refreshAppData();
+  }, [refreshAppData]);
 
   const value = useMemo(
     () => ({
