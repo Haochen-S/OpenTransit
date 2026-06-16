@@ -36,6 +36,23 @@ class Settings(BaseSettings):
         default=True,
         description="Use X-Forwarded-For / X-Real-IP for rate-limit keys (TRUST_PROXY_HEADERS)",
     )
+    smtp_host: str = Field(default="", description="SMTP server host (SMTP_HOST)")
+    smtp_port: int = Field(default=587, description="SMTP server port (SMTP_PORT)")
+    smtp_user: str = Field(default="", description="SMTP username (SMTP_USER)")
+    smtp_password: str = Field(default="", description="SMTP password (SMTP_PASSWORD)")
+    smtp_from: str = Field(default="", description="From email address (SMTP_FROM)")
+    smtp_use_tls: bool = Field(default=True, description="Use STARTTLS for SMTP (SMTP_USE_TLS)")
+    otp_expire_minutes: int = Field(default=10, description="Login code lifetime (OTP_EXPIRE_MINUTES)")
+    otp_max_attempts: int = Field(default=5, description="Max verify attempts per code (OTP_MAX_ATTEMPTS)")
+    otp_send_limit_per_hour: int = Field(
+        default=5,
+        description="Max codes sent per email per hour (OTP_SEND_LIMIT_PER_HOUR)",
+    )
+    captcha_ttl_seconds: int = Field(default=300, description="Captcha lifetime (CAPTCHA_TTL_SECONDS)")
+    otp_pepper: str = Field(
+        default="",
+        description="Optional HMAC pepper for OTP hashing (OTP_PEPPER); defaults to JWT_SECRET",
+    )
 
     @field_validator("environment")
     @classmethod
@@ -44,6 +61,12 @@ class Settings(BaseSettings):
 
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host.strip() and self.smtp_from.strip())
+
+    def otp_pepper_value(self) -> str:
+        return self.otp_pepper.strip() or self.jwt_secret
 
     def validate_production(self) -> None:
         if self.environment != "production":
@@ -56,6 +79,9 @@ class Settings(BaseSettings):
 
         if not self.tfnsw_api_key.strip():
             raise RuntimeError("TFNSW_API_KEY is required in production")
+
+        if not self.smtp_configured():
+            raise RuntimeError("SMTP_HOST and SMTP_FROM are required in production")
 
 
 settings = Settings()

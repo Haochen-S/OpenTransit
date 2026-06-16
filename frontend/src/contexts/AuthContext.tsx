@@ -15,8 +15,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   isLoggedIn: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  verifyOtp: (email: string, otp: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -38,16 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { access_token } = await api.login(email, password);
+  const verifyOtp = useCallback(async (email: string, otp: string) => {
+    const { access_token } = await api.verifyOtp(email, otp);
     localStorage.setItem(TOKEN_KEY, access_token);
     setUser(await api.me());
   }, []);
-
-  const register = useCallback(async (email: string, password: string) => {
-    await api.register(email, password);
-    await login(email, password);
-  }, [login]);
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
@@ -59,11 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       isLoggedIn: Boolean(user),
-      login,
-      register,
+      verifyOtp,
       logout,
     }),
-    [user, loading, login, register, logout],
+    [user, loading, verifyOtp, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -47,17 +47,25 @@ class ApiClient {
     return response.json() as Promise<T>;
   }
 
-  login(email: string, password: string): Promise<{ access_token: string }> {
-    return this.request("/auth/login", {
+  getLoginCaptcha(): Promise<{ captcha_id: string; question: string }> {
+    return this.request("/auth/captcha");
+  }
+
+  sendOtp(email: string, captchaId: string, captchaAnswer: string): Promise<{ message: string }> {
+    return this.request("/auth/send-code", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        captcha_id: captchaId,
+        captcha_answer: captchaAnswer,
+      }),
     });
   }
 
-  register(email: string, password: string): Promise<User> {
-    return this.request("/auth/register", {
+  verifyOtp(email: string, otp: string): Promise<{ access_token: string }> {
+    return this.request("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, code: otp }),
     });
   }
 

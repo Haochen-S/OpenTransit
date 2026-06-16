@@ -3,11 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
-
-
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -21,6 +16,21 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-class LoginRequest(BaseModel):
+class CaptchaResponse(BaseModel):
+    captcha_id: str
+    question: str
+
+
+class SendCodeRequest(BaseModel):
     email: EmailStr
-    password: str
+    captcha_id: str = Field(min_length=8, max_length=128)
+    captcha_answer: str = Field(min_length=1, max_length=32)
+
+
+class SendCodeResponse(BaseModel):
+    message: str
+
+
+class VerifyCodeRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
